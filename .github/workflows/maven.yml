@@ -1,0 +1,37 @@
+name: Build stripped XMLUnit Core
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Build xmlunit-core
+        run: mvn -pl xmlunit-core -am clean package -DskipTests
+
+      - name: Verify no javax JAXB remains
+        run: |
+          JAR=$(ls xmlunit-core/target/xmlunit-core-*.jar | head -n 1)
+          echo "Checking $JAR"
+          ! jar tf "$JAR" | grep 'javax_jaxb'
+          ! unzip -p "$JAR" META-INF/MANIFEST.MF | grep 'javax.xml.bind'
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xmlunit-core-stripped
+          path: xmlunit-core/target/xmlunit-core-*.jar
