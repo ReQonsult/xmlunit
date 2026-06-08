@@ -17,20 +17,33 @@ package org.xmlunit.builder;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
-import org.xmlunit.builder.javax_jaxb.DefaultJaxbBuilderFactory;
-
 /**
  * Helps finding the proper JAXB implementation.
+ *
+ * Stripped variant without legacy javax.xml.bind support.
  *
  * @since 2.9.0
  */
 class JaxbBuilderFactoryLocator {
+
+    private JaxbBuilderFactoryLocator() {
+    }
+
     /**
      * Provides the configured JaxbBuilderFactory.
      */
     static JaxbBuilderFactory getFactory() {
-        final ServiceLoader<JaxbBuilderFactory> sl = ServiceLoader.load(JaxbBuilderFactory.class);
+        final ServiceLoader<JaxbBuilderFactory> sl =
+            ServiceLoader.load(JaxbBuilderFactory.class);
+
         final Iterator<JaxbBuilderFactory> factories = sl.iterator();
-        return factories.hasNext() ? factories.next() : new DefaultJaxbBuilderFactory();
+
+        if (factories.hasNext()) {
+            return factories.next();
+        }
+
+        throw new IllegalStateException(
+            "No JaxbBuilderFactory implementation available."
+        );
     }
 }
